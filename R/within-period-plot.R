@@ -1,3 +1,19 @@
+# rename and export
+
+#' Plot period data
+#'
+#' @param data CHANGEME
+#' @param period.ln CHANGEME
+#' @param test.stats CHANGEME
+#' @param title CHANGEME
+#' @param param.lines CHANGEME
+#' @param cpts CHANGEME
+#' @param params2plot CHANGEME
+#' @param circData CHANGEME
+#' @param param.est.col CHANGEME
+#' @param defaultAxes CHANGEME
+#'
+#' @export
 withinPeriod_plot <- function(data, period.len=96,test.stats='Normal meanvar',title='',param.lines=FALSE,cpts=c(period.len),params2plot="Mean",circData=TRUE,param.est.col='red',defaultAxes=TRUE){
   # assume data comes in two forms, matrix or vector.
   # vector: just the data. matrix/dataframe: two columns, first is data

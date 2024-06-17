@@ -1,4 +1,15 @@
-# calculates the estimated parameters in the estimated segments of the (circular time) data
+# export
+
+#' Calculate the estimated parameters in the estimated segments of the (circular time) data
+#'
+#' @param data CHANGEME
+#' @param period.len CHANGEME
+#' @param params2est CHANGEME
+#' @param cpts CHANGEME
+#' @param circdata CHANGEME
+#' @returns estimated parameters
+#'
+#' @export
 param.ests <- function(data, period.len=96, params2est='Mean', cpts=c(period.len), circdata=TRUE){
   # circdata => does the data need to be put into circular time? If so, use data_circ
   # if not, assume data[,1] is the within period time index, data[,2] is the data

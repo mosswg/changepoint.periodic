@@ -1,9 +1,11 @@
-# function to run SNcirc with normal distribution
+# do not export
+
+#' Run SNcirc with normal distribution
 sncirc.norm <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist="Normal meanvar",all.seg){
   if(missing(all.seg)){all.seg = sncirc.allseg.norm(data,period.len,dist)}
   N = period.len
   M = max.cpts
-  
+
   like.M <- array(0,c(M,N,N)) #in the format like.M[m,j,k]
   #initialise like.M for m=1
   for(k in 1:N){
@@ -12,7 +14,7 @@ sncirc.norm <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist
       like.M[1,j,k] = all.seg[k,j]
     }
   }
-  
+
   cp = array(NA,c(M,N,N)) # cp[m,j,k], last cpt location prior to j (mth changepoint), given m cpts and starting at k
   for(k in 1:N){
     for(m in 2:M){
@@ -78,20 +80,20 @@ sncirc.norm <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist
   }
   criterion=-2*lv+h*pen.val #likelihood plus the penalty term for each m
   op.ncps<-h[which(criterion==min(criterion,na.rm=T))[1]]
-  
+
   if(op.ncps==(M)){warning('The number of segments identified is M, it is advised to increase M to make sure changepoints have not been missed.')}
   if(op.ncps==0){cpts=N}
   else{
     cpts = c(sort(cps.M[op.ncps,][cps.M[op.ncps,]>0])) #cpt locations for the optimal no. of cpts
   }
-  
+
   if(op.ncps==0){op.like=criterion[1]}else{op.like=criterion[op.ncps]}
   return(list(cps=apply(cps.M,1,sort,na.last=TRUE),op.ncpts=op.ncps,op.cpt.loc=cpts,op.like=op.like, like.M=like.M, period.len=period.len, pen.val=pen.val,
               cp=cp, like.M.coll=like.M.coll, op.k=op.k, op.likes.m=lv, op.likes.m.pen=criterion, max.cpts=max.cpts, all.seg=all.seg))
 }
 
 
-# function to calculate all.seg with normal distribution
+#' Calculate all.seg with normal distribution
 sncirc.allseg.norm <- function(data,period.len=96,dist="Normal meanvar"){
   #do the subset stuff before all.seg to reduce computational time
   N=period.len

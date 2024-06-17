@@ -1,5 +1,13 @@
-# function to add within-period time index column to data. 
-# Output: 1st column=within-period time index. 2nd column=data.
+# export
+
+#' Add within-period time index column to data.
+#'
+#' @param data CHANGEME
+#' @param period.len CHANGEME
+#' @param n.obs CHANGEME
+#' @returns Matrix: 1st column=within-period time index. 2nd column=data.
+#'
+#' @export
 data_circ <- function(data,period.len=96,n.obs){
   if(missing(n.obs)){
     if(is.null(dim(data))){

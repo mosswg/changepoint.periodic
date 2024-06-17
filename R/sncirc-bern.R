@@ -1,4 +1,6 @@
-# function to run SNcirc with bernoulli distribution
+# do not export
+
+#' Run SNcirc with bernoulli distribution
 sncirc.bern <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist="Bernoulli",all.seg){
   if(missing(all.seg)){all.seg = sncirc.allseg.bern(data,period.len)}
   N = period.len
@@ -92,7 +94,7 @@ sncirc.bern <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist
 
 
 
-# function to calculate all.seg with bernoulli distribution
+#' Calculate all.seg with bernoulli distribution
 sncirc.allseg.bern <- function(data,period.len=96){
   #do the subset stuff before all.seg to reduce computational time
   N=period.len

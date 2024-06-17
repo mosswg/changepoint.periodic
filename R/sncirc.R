@@ -1,7 +1,19 @@
-# SNcirc function for user
+#' Run SNcirc on the provided data
+#'
+#' @param data CHANGEME
+#' @param period.len CHANGEME
+#' @param dist CHANGEME
+#' @param max.cpts CHANGEME
+#' @param minseglen CHANGEME
+#' @param pen.val CHANGEME
+#' @param cost CHANGEME
+#' @param circData CHANGEME
+#' @returns sncirc results
+#'
+#' @export
 sncirc <- function(data, period.len=96, dist="Normal meanvar",max.cpts=5,minseglen=1,pen.val=3*log(length(data)),cost="Likelihood",circData=TRUE){
   # Function to run SNcirc on periodic data for different distributions
-  
+
   # assume data comes in two forms, matrix or vector.
   # vector: just the data. matrix/dataframe: two columns, first is data
   if(is.null(dim(data))){
