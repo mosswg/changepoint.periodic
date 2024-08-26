@@ -12,7 +12,8 @@ sncirc(
   minseglen = 1,
   pen.val = 3 * log(length(data)),
   cost = "Likelihood",
-  circData = TRUE
+  circData = TRUE,
+  useClass = TRUE
 )
 }
 \arguments{

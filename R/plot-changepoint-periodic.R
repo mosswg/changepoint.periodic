@@ -2,19 +2,19 @@
 
 #' Plot period data
 #'
-#' @param data CHANGEME
-#' @param period.ln CHANGEME
-#' @param test.stats CHANGEME
-#' @param title CHANGEME
-#' @param param.lines CHANGEME
-#' @param cpts CHANGEME
-#' @param params2plot CHANGEME
-#' @param circData CHANGEME
-#' @param param.est.col CHANGEME
-#' @param defaultAxes CHANGEME
+#' @param data Change point data
+#' @param period.len Period length
+#' @param test.stats Type of test ("Normal meanvar", "Normal mean", or "Bernoulli")
+#' @param title Plot title
+#' @param param.lines Whether or not to show param lines
+#' @param cpts Changepoints
+#' @param params2plot Passed to param.ests
+#' @param circData If the data is circular
+#' @param param.est.col Color of param est lines
+#' @param defaultAxes Passed to plot
 #'
 #' @export
-withinPeriod_plot <- function(data, period.len=96,test.stats='Normal meanvar',title='',param.lines=FALSE,cpts=c(period.len),params2plot="Mean",circData=TRUE,param.est.col='red',defaultAxes=TRUE){
+plot.changepoints.periodic <- function(data, period.len=96,test.stats='Normal meanvar',title='',param.lines=FALSE,cpts=c(period.len),params2plot="Mean",circData=TRUE,param.est.col='red',defaultAxes=TRUE){
   # assume data comes in two forms, matrix or vector.
   # vector: just the data. matrix/dataframe: two columns, first is data
   if(is.null(dim(data))){
@@ -25,7 +25,7 @@ withinPeriod_plot <- function(data, period.len=96,test.stats='Normal meanvar',ti
 
 
   if(isTRUE(circData)){
-    # TRUE = need to put the data into circular time
+   # TRUE = need to put the data into circular time
     dat = data_circ(data,period.len,n)
   } else{dat = data}
   #assumes first column is within period time index, second column is the data

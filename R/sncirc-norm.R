@@ -27,15 +27,16 @@ sncirc.norm <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist
         j.circ = j%%N
         j.circ[j.circ==0] = N
         like=like.M[m-1,v,k]+all.seg[v2,j.circ]
-        
-        like.M[m,j.circ,k] = max(like,na.rm=TRUE) 
+
+        like.M[m,j.circ,k] = max(like,na.rm=TRUE)
+
         add.cpt.loc = which(like==max(like,na.rm=TRUE))[1]+(k+(m-1)*minseglen-1) # cpt location prior to j
         if(add.cpt.loc>N){add.cpt.loc = add.cpt.loc%%N}
         cp[m,j.circ,k]=add.cpt.loc
       }
     }
   }
-  
+
   #collapse the current like.M dimension from 3 to 2
   like.M.coll = matrix(ncol=N,nrow=M,0)
   op.k = NULL #optimal starting positions for each m
@@ -51,7 +52,7 @@ sncirc.norm <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist
     like.M.coll[m,] = like.M[m,,k.opt]
     op.k = c(op.k, k.opt)
   }
-  
+
   cps.M=matrix(NA,ncol=m,nrow=m) #goes back and finds the optimal cpt locations for each m
   #k=start of a segment. So "first" changepoint is at k-1.
   f.cpts = (op.k[1]-1)%%N
@@ -66,11 +67,10 @@ sncirc.norm <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist
     }
   }
   cps.M = cbind(f.cpts, cps.M[,-ncol(cps.M)])
-  
-  
+
   op.ncps=NULL #the optimal number cpts for a given penalty
   h=c(0,2:M) #1cpt=0cpts so we should have a 0 penalty at first.
-  
+
   lv = NULL #likelihood vector
   for(i in 1:M){
     k = op.k[i]
@@ -86,6 +86,11 @@ sncirc.norm <- function(data,period.len=96,max.cpts=5,minseglen=1,pen.val=0,dist
   else{
     cpts = c(sort(cps.M[op.ncps,][cps.M[op.ncps,]>0])) #cpt locations for the optimal no. of cpts
   }
+
+  # class cpts = periodic.cpts + (N * [0, ceil(n/N)])
+  # ensure cpts are smaller than n
+  # N = period length (e.g. number of observations per period) and n = total length of data so n/N is num_periods
+
 
   if(op.ncps==0){op.like=criterion[1]}else{op.like=criterion[op.ncps]}
   return(list(cps=apply(cps.M,1,sort,na.last=TRUE),op.ncpts=op.ncps,op.cpt.loc=cpts,op.like=op.like, like.M=like.M, period.len=period.len, pen.val=pen.val,

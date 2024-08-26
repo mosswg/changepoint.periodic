@@ -3,5 +3,6 @@
 export(data_circ)
 export(param.ests)
 export(pgcptSim)
+export(plot.changepoints.periodic)
 export(sncirc)
-export(withinPeriod_plot)
+useDynLib(changepoint.periodic, .registration = TRUE)

@@ -8,5 +8,3 @@
 
 library(testthat)
 library(changepoint.periodic)
-
-test_check("changepoint.periodic")

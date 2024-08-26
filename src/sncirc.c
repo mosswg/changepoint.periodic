@@ -57,20 +57,26 @@ enum allseg_type {
 };
 
 
-void circ_fill_allseg_norm(double* all_seg, int period_len, int* subset_mat, int meanvar) {
+void circ_fill_allseg_norm(double* all_seg, int period_len, double* subset_mat, int meanvar) {
 	int jend;
 	int j_circ;
-	int ssq, sum, len;
+	double ssq, sum, len;
+	double ssq_t, sum_t, len_t;
 	double LOG_2_PI = log(2*M_PI);
 	for (int i = 0; i < period_len; i++) {
-		int ssq = 0, sum = 0, jend = period_len + i - 1, len = 0;
-		for (int j = 0; j < jend; j++) {
+		ssq = 0, sum = 0, jend = period_len + i - 1, len = 0;
+		for (int j = i; j <= jend; j++) {
 			j_circ = j % period_len;
-			if (j_circ == 0) { j_circ = period_len; }
-			j_circ--;
-			len += get_from_imat(subset_mat, j_circ, subset_len, 3);
-			sum += get_from_imat(subset_mat, j_circ, subset_sum, 3);
-			ssq += get_from_imat(subset_mat, j_circ, subset_ssq, 3);
+			len_t = get_from_dmat(subset_mat, subset_len, j_circ + 1, 3);
+			sum_t = get_from_dmat(subset_mat, subset_sum, j_circ + 1, 3);
+			ssq_t = get_from_dmat(subset_mat, subset_ssq, j_circ + 1, 3);
+			len += len_t;
+			sum += sum_t;
+			ssq += ssq_t;
+			if (len == 0) {
+				Rprintf("Error: len zero\n");
+				continue;
+			}
 			if (meanvar) {
 				double sigsq = ssq - (sum * sum) / len;
 				if (sigsq < 0) { sigsq = 0.0000000000000001; }
@@ -85,44 +91,44 @@ void circ_fill_allseg_norm(double* all_seg, int period_len, int* subset_mat, int
 }
 
 
-void circ_fill_allseg_bern(double* all_seg, int period_len, int* subset_mat) {
+void circ_fill_allseg_bern(double* all_seg, int period_len, double* subset_mat) {
 	int jend, j_circ;
-	int ssq, sum, len;
+	double sum, len;
 	double sl, sl_inv;
-	double LOG_2_PI = log(2*M_PI);
 	for (int i = 0; i < period_len; i++) {
-		ssq = 0, sum = 0, jend = period_len + i - 1, len = 0;
-		for (int j = 0; j < jend; j++) {
+		sum = 0, jend = period_len + i - 1, len = 0;
+		for (int j = i; j <= jend; j++) {
 			j_circ = j % period_len;
-			if (j_circ == 0) { j_circ = period_len; }
-			j_circ--;
-			len += get_from_imat(subset_mat, j_circ, subset_len, 2);
-			sum += get_from_imat(subset_mat, j_circ, subset_sum, 2);
+			len += get_from_dmat(subset_mat, subset_len, j_circ + 1, 3);
+			sum += get_from_dmat(subset_mat, subset_sum, j_circ + 1, 3);
 			if (sum == len) {sl = 1; sl_inv = 1E-323;}
 			else if (sum == 0) {sl = 1E-323; sl_inv = 1;}
 			else {sl = sum/len; sl_inv = 1 - sl;}
-			set_dmat(all_seg, i, j_circ, period_len, (sum * log(sl)) + (len - sum) * log(sl_inv));
+			set_dmat(all_seg, i, j_circ, period_len, (sum * log(sl)) + ((len - sum) * log(sl_inv)));
 		}
 	}
 }
 
-double* circ_allseg(double* data, double* all_seg, int data_width, int period_len, enum allseg_type type) {
-	int* subset_mat = malloc(3 * period_len * sizeof(int));
-	int sum, ssq, len;
+double* circ_allseg(double* data, double* all_seg, int data_len, int period_len, enum allseg_type type) {
+	double* subset_mat = malloc(3 * period_len * sizeof(double));
+	for (int i = 0; i < (3 * period_len); i++) {
+		subset_mat[i] = 0.0f;
+	}
+	double sum, ssq, len;
 	double e, e2;
-	for (int i = 0; i < period_len; i++) {
+	for (int i = 1; i <= period_len; i++) {
 		sum = 0, ssq = 0, len = 0;
-		for (int j = 0; j < data_width; j++) {
-			if ((e = get_from_dmat(data, j, 1, data_width)) == i) {
+		for (int j = 0; j < data_len; j++) {
+			if ((e = get_from_dmat(data, j, 0, data_len)) == i) {
 				len++;
-				e2 = get_from_dmat(data, j, 2, data_width);
+				e2 = get_from_dmat(data, j, 1, data_len);
 				sum += e2;
 				ssq += (e2 * e2);
 			}
 		}
-		set_imat(subset_mat, i, subset_len, 3, len);
-		set_imat(subset_mat, i, subset_sum, 3, sum);
-		set_imat(subset_mat, i, subset_ssq, 3, ssq);
+		set_dmat(subset_mat, subset_len, i, 3, len);
+		set_dmat(subset_mat, subset_sum, i, 3, sum);
+		set_dmat(subset_mat, subset_ssq, i, 3, ssq);
 	}
 
 	// double* all_seg = malloc(period_len * period_len * sizeof(double));
@@ -161,42 +167,50 @@ void sncirc(int* dist,
 			   int* op_cps,
 			   int* op_k,
 			   int* f_cpts,
-			   int* criterion,
+			   double* criterion,
 			   double* like_m,
 			   double* like_m_coll,
 			   int* lv,
-			   double* all_seg) {
+			   double* all_seg,
+			   int* op_like) {
 
-	double* all_seg = circ_allseg(data, all_seg, data_len, *period_len, *dist);
+	circ_allseg(data, all_seg, *data_len, *period_len, *dist);
 
 	// double* like_m = malloc((*max_cpts) * (*period_len) * (*period_len) * sizeof(double));
 	for (int k = 0; k < *period_len; k++) {
 		for (int j = 0; j < *period_len; j++) {
-			set_3d_dmat(like_m, 1, j, k, (*max_cpts), (*period_len), get_from_dmat(all_seg, k, j, (*period_len)));
+			set_3d_dmat(like_m, 0, j, k, (*max_cpts), (*period_len), get_from_dmat(all_seg, k, j, (*period_len)));
 		}
 	}
 
 	double like = 0;
-	int like_index;
+	int like_index, count;
 	double tmp = 0;
 	// int* cp = malloc((*max_cpts) * (*period_len) * (*period_len) * sizeof(int));
-	for (int k = 0; k < (*period_len); k++) {
-		for (int m = 1; m < (*max_cpts); m++) {
-			for (int j = k + m * (*minseglen); j < (k - 1 + (*period_len)); j++) {
+	for (int k = 1; k <= (*period_len); k++) {
+		for (int m = 2; m <= (*max_cpts); m++) {
+			for (int j = k + m * (*minseglen); j <= (k - 1 + (*period_len)); j++) {
 				like = -INFINITY;
 				like_index = -1;
-				int j_circ = mod_index(j, *period_len);
-				for (int v = (k + (m - 1) * (*minseglen)); v < (j - (*minseglen)); v++) {
-					int v_circ = mod_index(v, *period_len);
-					int v2 = mod_index((v + 1), *period_len);
-					tmp = get_from_3d_dmat(like_m, m - 1, v_circ, k, (*max_cpts), (*period_len)) + get_from_dmat(all_seg, v2, j_circ, *period_len);
+				count = 1;
+				int j_circ = j % *period_len;
+				if (j_circ == 0) { j_circ = *period_len; }
+				for (int v = (k + (m - 1) * (*minseglen)); v <= (j - (*minseglen)); v++) {
+					int v_circ = v % *period_len;
+					if (v_circ == 0) {v_circ = *period_len;}
+					int v2 = (v + 1) % *period_len;
+					if (v2 == 0) {v2 = *period_len;}
+					tmp = get_from_3d_dmat(like_m, m - 2, v_circ - 1, k - 1, (*max_cpts), (*period_len)) + get_from_dmat(all_seg, v2 - 1, j_circ - 1, *period_len);
 					if (tmp > like) {
 						like = tmp;
-						like_index = v;
+						like_index = count;
 					}
+					count++;
 				}
-				set_3d_dmat(like_m, m, j_circ, k, (*max_cpts), (*period_len), like);
-				set_3d_imat(cp, m, j_circ, k, (*max_cpts), (*period_len), like_index + (k + (m - 1) * (*minseglen) - 1));
+				set_3d_dmat(like_m, m-1, j_circ-1, k-1, (*max_cpts), (*period_len), like);
+				int set_val = (like_index + (k + (m - 1) * *minseglen - 1)) % (*period_len);
+				if (set_val == 0) { set_val = (*period_len); }
+				set_3d_imat(cp, m-1, j_circ-1, k-1, (*max_cpts), (*period_len), set_val);
 			}
 		}
 	}
@@ -205,51 +219,59 @@ void sncirc(int* dist,
 	// int* op_k = malloc((*max_cpts) * sizeof(int));
 	double max_like_k;
 	int max_like_k_index;
-	for (int m = 0; m < (*max_cpts); m++) {
+	for (int m = 1; m <= (*max_cpts); m++) {
 		max_like_k = -INFINITY;
 		max_like_k_index = -1;
-		for (int k = 0; k < (*period_len); k++) {
+		for (int k = 1; k <= (*period_len); k++) {
 			int wrap = (k - 1 + (*period_len)) % (*period_len);
-			if (wrap == 0) { wrap = ((*period_len) - 1); }
-			double val = get_from_3d_dmat(like_m, m, wrap, k, (*max_cpts), (*period_len));
+			if (wrap == 0) {wrap = (*period_len);}
+			double val = get_from_3d_dmat(like_m, m-1, wrap-1, k-1, (*max_cpts), (*period_len));
 			if (val > max_like_k) {
 				max_like_k = val;
 				max_like_k_index = k;
 			}
 		}
-		int k_opt = max_like_k_index;
 		for (int i = 0; i < (*period_len); i++) {
-			set_dmat(like_m_coll, m, i, (*max_cpts), get_from_3d_dmat(like_m, m, i, k_opt, (*max_cpts), (*period_len)));
+			set_dmat(like_m_coll, m-1, i, (*max_cpts), get_from_3d_dmat(like_m, m-1, i, max_like_k_index-1, (*max_cpts), (*period_len)));
 		}
-		op_k[m] = k_opt;
+		op_k[m-1] = max_like_k_index;
 	}
-
-
-
 
 	/// cps_m = m * m
 	/// f_cpts = m
-	f_cpts[0] = mod_index((op_k[0] - 1), (*period_len));
-	for (int m = 1; m < (*max_cpts); m++) {
-		f_cpts[m] = mod_index(op_k[m] - 1, (*period_len));
-		set_imat(cps_m, m, 1, (*max_cpts), get_from_3d_imat(cp, m, f_cpts[m], op_k[m], (*max_cpts), (*period_len)));
-		for (int i = 0; i < m-1; i++) {
-			set_imat(cps_m, m, i+1, (*max_cpts), get_from_3d_imat(cp, m, get_from_imat(cps_m, m, i, (*max_cpts)), op_k[m], (*max_cpts), (*period_len)));
+	f_cpts[0] = (op_k[0] - 1) % (*period_len);
+	if (f_cpts[0] == 0) { f_cpts[0] = (*period_len); }
+	for (int m = 2; m <= (*max_cpts); m++) {
+		int f = (op_k[m - 1] - 1) % (*period_len);
+		if (f == 0) { f = (*period_len); }
+		f_cpts[m-1] = f;
+		set_imat(cps_m, m-1, 0, (*max_cpts), get_from_3d_imat(cp, m-1, f-1, op_k[m-1]-1, (*max_cpts), (*period_len)));
+		for (int i = 1; i <= m-1; i++) {
+			set_imat(cps_m, m-1, i, (*max_cpts), get_from_3d_imat(cp, m-i-1, get_from_imat(cps_m, m-1, i-1, (*max_cpts))-1, op_k[m-1]-1, (*max_cpts), (*period_len)));
 		}
 	}
 
-	*min_criterion = INT_MAX;
 	*op_cps = -1;
-	int tmp_crit = 0;
+
+	double min_criterion = INFINITY;
+	int min_criterion_index = 0;
 	int k_end;
 	for (int i = 0; i < (*max_cpts); i++) {
 		k_end = mod_index((op_k[i] - 1) + (*period_len), (*period_len));
-		tmp_crit = -2 * get_from_dmat(like_m_coll, i, k_end, *(max_cpts)) + i * (*pen);
-		if (tmp_crit < *min_criterion) {
-			*min_criterion = tmp_crit;
-			*op_cps = i;
+		lv[i] = get_from_dmat(like_m_coll, i, k_end, *(max_cpts));
+		criterion[i] = -2 * lv[i]  + i * (*pen);
+		if (criterion[i] < min_criterion) {
+			min_criterion = criterion[i];
+			min_criterion_index = i;
 		}
 	}
+	if (min_criterion_index == 0) {
+		*op_cps = 0;
+	}
+	else {
+		*op_cps = min_criterion_index + 1;
+	}
+
 	if (*op_cps == -1) {
 		Rprintf("Error: op.cps not set\n");
 		*error = 3;
@@ -274,7 +296,10 @@ void sncirc(int* dist,
 		/// cptsout is sorted in R
 	}
 
-
-	free(all_seg);
-	free(cp);
+	if (*op_cps == 0) {
+		*op_like = criterion[0];
+	}
+	else {
+		*op_like = criterion[*op_cps - 1];
+	}
 }
